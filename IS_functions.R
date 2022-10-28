@@ -4,9 +4,9 @@
 #
 # Literature related to the functions are:
 #
-# Araújo, M. S., D. I. Bolnick, G. Machado, A. A. Giaretta, and S. F. dos Reis. 2007. Using ??13C stable isotopes to quantify individual-level diet variation. Oecologia 152:643-654.
-# Bolnick, D. I., R. Svanbäck, M. S. Araújo, and L. Persson. 2007. Comparative support for the niche variation hypothesis that more generalized populations also are more heterogeneous. Proceedings of the National Academy of Sciences 104:10075-10079.
-# Bolnick, D. I., L. H. Yang, J. A. Fordyce, J. M. Davis, and R. Svanbäck. 2002. Measuring individual-level resource specialization. Ecology 83:2936-2941.
+# AraÃºjo, M. S., D. I. Bolnick, G. Machado, A. A. Giaretta, and S. F. dos Reis. 2007. Using ??13C stable isotopes to quantify individual-level diet variation. Oecologia 152:643-654.
+# Bolnick, D. I., R. SvanbÃ¤ck, M. S. AraÃºjo, and L. Persson. 2007. Comparative support for the niche variation hypothesis that more generalized populations also are more heterogeneous. Proceedings of the National Academy of Sciences 104:10075-10079.
+# Bolnick, D. I., L. H. Yang, J. A. Fordyce, J. M. Davis, and R. SvanbÃ¤ck. 2002. Measuring individual-level resource specialization. Ecology 83:2936-2941.
 # Lawlor, L. R. 1980. Overlap, Similarity, and Competition Coefficients. Ecology 61:245-251.
 # Pianka, E. R. 1973. The Structure of Lizard Communities. Annual Review of Ecology and Systematics 4:53-74.
 # Vander Zanden, M., and J. Rasmussen. 2001. Variation in d15N and d13C trophic fractionation: Implications for aquatic food web studies. Limnology and Oceanography 46:2061-2066.
@@ -115,14 +115,13 @@ res[,k]=data.frame(apply(np,1,function (x) length(na.omit(x))))
 
 IS<-function(data,method){
   
-  pij<-data/rowSums(data)#proportion des donnees pour chaque consommateur
-  pip<-rowSums(data)/sum(data)#toutes les proies pour un conso dans toute la pop bolnich 2002 pi point = pop 
+  pij<-data/rowSums(data)#proportion for each consumer
+  pip<-rowSums(data)/sum(data)# bolnich 2002 pi point = population 
   
-  #qj = propo de ressource pour toute la pop = nicghe breadth
-  if(method=="sum"){qj<-colSums(data)/sum(data)}#proportion moyenne
-  if(method=="average"){qj<-colMeans(pij)}# mieu =proportion moyenne de proie pour toute la pop evite les effets de ce qui ont beaucoup de proie = biais 
+  #qj = proportion of each resource for the total population = niche breadth
+  if(method=="sum"){qj<-colSums(data)/sum(data)
+  if(method=="average"){qj<-colMeans(pij)}# mean proportion of prey for all the population
  
-  #alphaij<- sweep(data, 2, colSums(data), `/`)#= alpha pour tous les conso on sait quelle prop ol mange par rapport à la proportion mangée par la pop
  
   df<-apply(data,1,function(x) length(which(x>0)))
   
@@ -131,16 +130,10 @@ IS<-function(data,method){
     inter[z,1]<- pip[z]*(-sum(pij[z,]*log(pij[z,]),na.rm=T))
     inter[z,2]<-1-0.5*sum(abs(pij[z,]-qj))#ps
     inter[z,3]<-prod((qj/pij[z,])^data[z,]) #lamda
-    inter[z,4]<-(prod((qj/pij[z,])^data[z,]))^(1/sum(data[z,]))#W = corrigé par raaport au nombre d'item alimentaire
-    inter[z,5]<-pchisq(-2*log(prod((qj/pij[z,])^data[z,])), df=df[z], lower.tail = FALSE) #pvalue = landa suit qui2 donc on a prob ave df = au nmbre de proies diff de celui modelisé au hasard avec model null
+    inter[z,4]<-(prod((qj/pij[z,])^data[z,]))^(1/sum(data[z,]))#W = corrected according to the number of items
+    inter[z,5]<-pchisq(-2*log(prod((qj/pij[z,])^data[z,])), df=df[z], lower.tail = FALSE) #pvalue = landa follows qui2 = difference with the null model
   }
   
-  #inter2<-matrix(NA,ncol=1,nrow=ncol(data))
-  #for (r in 1:ncol(data)){
-  #  inter2[r,1]<- qj[r]*(-sum(alphaij[,r]*log(alphaij[,r]),na.rm=T))
-  #}
-  
-  #BICs=sum(pip*log(pip))-sum(inter2)
   
   res<-data.frame(WICs=sum(inter[,1]),TNWs=-sum(qj*log(qj)),
                   WICs_TNWs=sum(inter[,1])/-sum(qj*log(qj)),
@@ -167,8 +160,8 @@ make_null<-function(data,n,N,method){
   
   pij<-data/rowSums(data);pij<-na.omit(pij)# proportion des proies
   
-  if(method=="sum"){qj<-colSums(data)/sum(data)} # donne beaucoup de poids à des indiv rare avec bcp d'item alim spé
-  if(method=="average"){qj<-colMeans(pij)}#lisse les indiv rare 
+  if(method=="sum"){qj<-colSums(data)/sum(data)} 
+  if(method=="average"){qj<-colMeans(pij)}
   
   null<-t(rmultinom(n, N,qj))
   return(data.frame(null))
@@ -204,10 +197,10 @@ random_IS<-function(data,replicate,method){
     
     surr<-data.frame(matrix(NA,ncol=ncol(data),nrow=nrow(data)))
     for (j in 1:nrow(data)){
-      surr[j,]<-make_null(data=data,n=1,N=items[j],method)# n=1 on prend pour chaque indiv une simulation de bouffe
+      surr[j,]<-make_null(data=data,n=1,N=items[j],method)
     }
     
-    if(length(which(colSums(surr)==0))>0){surr<-surr[,-which(colSums(surr)==0)]}# vire col = 0 car proba très faible 
+    if(length(which(colSums(surr)==0))>0){surr<-surr[,-which(colSums(surr)==0)]}
     
     sim_ind_sp<-IS(surr,method)
     
@@ -217,8 +210,8 @@ random_IS<-function(data,replicate,method){
     
   }
   
-  p_V<-length(which(res[,1]>obs_V))/replicate# lequels simulés sont sup au v obs fait avec le mod nulle = proportion = sgnificatif de spe indiv
-  p_WICs_TNWs<-length(which(res[,2]<obs_WICs_TNWs))/replicate  # spé = proche de 0 donc on cherche les inferieurs
+  p_V<-length(which(res[,1]>obs_V))/replicate
+  p_WICs_TNWs<-length(which(res[,2]<obs_WICs_TNWs))/replicate
   p_W<-length(which(res[,3]<obs_W))/replicate
   
   return(list(obs=obs, data.frame(p_V=p_V,p_WICs_TNWs=p_WICs_TNWs,p_W=p_W),data.frame(res)))
@@ -242,29 +235,29 @@ pairs_overlap<-function(data){
 pij<-data/rowSums(data)
 
 m=seq(from=1,to=nrow(pij),by=1)
-uniq.pairs <- unique(as.data.frame(t(apply(expand.grid(m, m), 1, sort))))#test que les paire uniques 
+uniq.pairs <- unique(as.data.frame(t(apply(expand.grid(m, m), 1, sort))))
 uniq.pairs<-uniq.pairs[-which(uniq.pairs[,1]==uniq.pairs[,2]),]
 
-overlap<-data.frame(matrix(NA,ncol=1,nrow=nrow(uniq.pairs)));names(overlap)<-"PS" #pour les couples
+overlap<-data.frame(matrix(NA,ncol=1,nrow=nrow(uniq.pairs)));names(overlap)<-"PS" 
 for (k in 1:nrow(overlap)){
   
-  couple<-as.matrix(uniq.pairs[k,]) #quelle paire est unique ? enlève les indiv 1 avec indiv1
-  overlap[k,1]<-sum(pmin(pij[couple[1],],pij[couple[2],])) #pmin prend la plus petite valeur 
+  couple<-as.matrix(uniq.pairs[k,]) 
+  overlap[k,1]<-sum(pmin(pij[couple[1],],pij[couple[2],]))  
   
   }
 overlap<-data.frame(uniq.pairs,overlap)
 
   attach(overlap)
 
-mean_ind_overlap<-matrix(NA,ncol=1,nrow=nrow(data));names(mean_ind_overlap)<-c("PS")# moyenne de l'overlap de indiv & à nombre de data lequel dans la col1 et col2 lequel est = de 1 à la dernière valeur overlap moyen pour un inviv pa rapp aux autres
+mean_ind_overlap<-matrix(NA,ncol=1,nrow=nrow(data));names(mean_ind_overlap)<-c("PS")
 for (l in 1:nrow(data)){
   mean_ind_overlap[l,1]<-mean(overlap[which(overlap[,1]==l | overlap[,2]==l),3])
  
 }
 
-mean_overlap<-mean(overlap[,3])#overlap moyen de toutes les paires uniques dans la pop
+mean_overlap<-mean(overlap[,3])#menan overlarp of all pairs
 
-sim_mat_p<-data.frame(matrix(NA,ncol=nrow(data),nrow=nrow(data)))# mat d'overlap si on a le 1-2 on a pas le 2-1
+sim_mat_p<-data.frame(matrix(NA,ncol=nrow(data),nrow=nrow(data)))
 for (i in 1:nrow(data)){
   for (j in 1:nrow(data)){
   
@@ -342,7 +335,7 @@ overlap_pairs[k,1]<-sum(metric[couple[1],]*metric[couple[2],])/sqrt(sum(metric[c
 
 
 
-# The function iso_convert is derived from Araùjo (2007) and converts the diet of a consumer
+# The function iso_convert is derived from AraÃ¹jo (2007) and converts the diet of a consumer
 # to its expected stable isotope value considering individual variations for trophic fractionation 
 # according to Vander Zanden and Rasmussen (2001) set at 1+-1 for d13C and 3.4+-1 for d15N
 # 
